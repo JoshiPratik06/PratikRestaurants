@@ -4,7 +4,7 @@ import Register from "./Register";
 import Login from "./Login";
 import About from "./About";
 import Contact from "./Contact";
-import Orders from "./Orders.jsx";
+import Orders from "./Orders";
 import AdminDashboard from "./AdminDashboard";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import upiQRCode from "./assets/uipqrcode.png";
