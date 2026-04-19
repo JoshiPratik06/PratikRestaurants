@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "react";
 
 function Login({ close, setUser }) {
   const [email, setEmail] = useState("");
