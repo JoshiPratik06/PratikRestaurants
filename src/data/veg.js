@@ -4,6 +4,7 @@ import chanaMasalaImg from "../assets/chanamasala.jpg";
 import alooGobiImg from "../assets/aloogobi.jpg";
 import bainganBhartaImg from "../assets/bainganbharta.jpg";
 import palakPaneerImg from "../assets/palakpaneer.jpg";
+import choleImg from "../assets/Chole.jpg";
 
 const vegItems = [
   {
@@ -47,6 +48,13 @@ const vegItems = [
     price: 210,
     category: "Veg",
     image: palakPaneerImg,
+  },
+  {
+    id: "Veg7",
+    name: "Chole",
+    price: 180,
+    category: "Veg",
+    image: choleImg,
   },
 ];
 

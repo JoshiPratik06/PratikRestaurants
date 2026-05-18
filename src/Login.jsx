@@ -1,46 +1,65 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import axios from "axios";
 
 function Login({ close, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e) => {
-  e.preventDefault();
+  const [loading, setLoading] = useState(false);
 
-  try {
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-    // find matching user
-    const user = users.find(
-      (u) => u.email === email && u.password === password
-    );
+    try {
+      setLoading(true);
 
-    if (!user) {
-      alert("Invalid email or password ❌");
-      return;
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email,
+          password,
+        }
+      );
+
+      // ✅ backend response
+      const data = response.data;
+
+      // ✅ save token
+      localStorage.setItem("token", data.token);
+
+      // ✅ save user
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify(data.user)
+      );
+
+      // ✅ update app state
+      setUser(data.user);
+
+      alert("✅ Login successful!");
+
+      close();
+
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        error.response?.data?.message ||
+        "❌ Login failed"
+      );
+    } finally {
+      setLoading(false);
     }
-
-    // ✅ save logged in user
-    localStorage.setItem("currentUser", JSON.stringify(user));
-
-    setUser(user);
-
-    alert("✅ Login successful!");
-
-    close();
-  } catch (error) {
-    console.error(error);
-    alert("❌ Login error");
-  }
-};
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl w-[350px] shadow-xl relative">
-        
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-[350px] shadow-2xl relative">
+
+        {/* Close */}
         <button
           onClick={close}
-          className="absolute top-3 right-4 text-lg"
+          className="absolute top-3 right-4 text-lg text-gray-500 hover:text-red-500"
         >
           ✖
         </button>
@@ -49,28 +68,34 @@ function Login({ close, setUser }) {
           Login
         </h2>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          
+        <form
+          onSubmit={handleLogin}
+          className="flex flex-col gap-4"
+        >
           <input
             type="email"
             placeholder="Email"
             value={email}
-            onInput={(e) => setEmail(e.target.value)}
-            className="p-3 border rounded"
+            onChange={(e) => setEmail(e.target.value)}
+            className="p-3 border rounded-lg"
+            required
           />
 
           <input
             type="password"
             placeholder="Password"
             value={password}
-            onInput={(e) => setPassword(e.target.value)}
-            className="p-3 border rounded"
+            onChange={(e) => setPassword(e.target.value)}
+            className="p-3 border rounded-lg"
+            required
           />
 
-          <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded">
-            Login
+          <button
+            disabled={loading}
+            className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition"
+          >
+            {loading ? "Logging in..." : "Login"}
           </button>
-
         </form>
       </div>
     </div>
