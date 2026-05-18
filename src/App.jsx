@@ -407,7 +407,7 @@ export default function App() {
     }
 
     const orderResponse = await axios.post(
-      "http://localhost:5000/api/razorpay/order",
+      "https://pratikrestaurants.onrender.com/api/razorpay/order",
       {
         amount: Math.round(finalTotal * 100),
         currency: "INR",
@@ -439,7 +439,7 @@ export default function App() {
         }
 
         try {
-          await axios.post("http://localhost:5000/api/orders", {
+          await axios.post("https://pratikrestaurants.onrender.com/api/orders", {
             user_id: user.id || user._id,
             items: cart,
             total: Number(finalTotal),
@@ -1309,7 +1309,7 @@ function PaymentModal({
 
         try {
           setIsPlacingOrder(true);
-          await axios.post("http://localhost:5000/api/orders", {
+          await axios.post("https://pratikrestaurants.onrender.com/api/orders", {
             user_id: user.id || user._id,
             items: cart,
             total: Number(payableAmount),
