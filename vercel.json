@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://tandooribackend-env.eba-2bixidkv.ap-south-1.elasticbeanstalk.com/api/:path*"
+      "destination": "http://tandooribackend-env.eba-2bixikdv.ap-south-1.elasticbeanstalk.com/api/:path*"
     }
   ]
 }
