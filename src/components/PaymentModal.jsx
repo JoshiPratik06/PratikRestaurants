@@ -71,7 +71,7 @@ function PaymentModal({
 
     try {
       const response = await axios.post(
-        "https://pratikrestaurants.onrender.com/api/orders",
+        "/api/orders",
         {
           user_id: user._id || user.id,
           items: cart,

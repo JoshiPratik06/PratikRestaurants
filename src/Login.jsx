@@ -14,7 +14,7 @@ function Login({ close, setUser }) {
       setLoading(true);
 
       const response = await axios.post(
-        "https://pratikrestaurants.onrender.com/api/auth/login",
+        "/api/auth/login",
         {
           email,
           password,

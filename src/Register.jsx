@@ -12,7 +12,7 @@ function Register({ close }) {
       setLoading(true);
 
       const response = await axios.post(
-        "https://pratikrestaurants.onrender.com/api/auth/register",
+        "/api/auth/register",
         {
           name: data.name,
           email: data.email,
