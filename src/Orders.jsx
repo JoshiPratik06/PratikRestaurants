@@ -1,48 +1,67 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 function Orders({ close, user }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    try {
-      if (!user) {
+    let active = true;
+
+    const fetchOrders = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!user || !token) {
         setOrders([]);
         setLoading(false);
+        setError("Please log in again to view your orders.");
         return;
       }
 
       setLoading(true);
+      setError("");
 
-      // ✅ Get orders from localStorage
-      const allOrders =
-        JSON.parse(localStorage.getItem("orders")) || [];
+      try {
+        const response = await axios.get("/api/orders", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const fetchedOrders = response.data?.orders;
 
-      let filteredOrders = [];
+        if (!Array.isArray(fetchedOrders)) {
+          throw new Error("Order service returned an invalid response.");
+        }
 
-      if (user.role === "admin") {
-        // ✅ Admin sees all orders
-        filteredOrders = allOrders;
-      } else {
-        // ✅ User sees only their orders
-        filteredOrders = allOrders.filter(
-          (order) => order.user_id === user.id
-        );
+        if (active) {
+          setOrders(fetchedOrders);
+        }
+      } catch (fetchError) {
+        console.error("Failed to load orders:", fetchError);
+        if (active) {
+          setOrders([]);
+          setError(
+            fetchError.response?.data?.message ||
+              fetchError.message ||
+              "Unable to load your orders. Please try again."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
+    };
 
-      // ✅ Latest first
-      setOrders(filteredOrders.reverse());
-      setLoading(false);
-
-    } catch (err) {
-      console.error(err);
-      setOrders([]);
-      setLoading(false);
-    }
+    fetchOrders();
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const totalSpent = orders.reduce(
-    (sum, order) => sum + order.total,
+    (sum, order) => sum + Number(order.total || 0),
     0
   );
 
@@ -88,23 +107,29 @@ function Orders({ close, user }) {
             </div>
           ) : orders.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/80 p-8 text-center">
-              <p className="text-5xl mb-4">🛒</p>
-              <p className="text-xl font-semibold mb-2">
-                No orders yet
-              </p>
-              <p className="text-sm text-slate-400">
-                Place your first order and it will appear here.
-              </p>
+              {error ? (
+                <>
+                  <p className="text-xl font-semibold mb-2 text-red-400">
+                    Orders unavailable
+                  </p>
+                  <p className="text-sm text-slate-400">{error}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-5xl mb-4">🛒</p>
+                  <p className="text-xl font-semibold mb-2">No orders yet</p>
+                  <p className="text-sm text-slate-400">
+                    Place your first order and it will appear here.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
               {orders.map((order, index) => {
-
-                // ✅ FIX: items already object (no JSON.parse)
                 const items = order.items || [];
-
-                // ✅ FIX: use stored date
-                const orderDate = new Date(order.date);
+                const orderDate = new Date(order.createdAt || order.date);
+                const orderId = order._id || order.id;
 
                 const formattedDate = orderDate.toLocaleDateString("en-IN", {
                   day: "numeric",
@@ -119,7 +144,7 @@ function Orders({ close, user }) {
 
                 return (
                   <div
-                    key={order.id}
+                    key={orderId}
                     className="rounded-[1.75rem] border border-slate-800 bg-slate-900/90 p-5 shadow-sm"
                   >
 
@@ -132,7 +157,7 @@ function Orders({ close, user }) {
 
                         <div>
                           <p className="text-sm font-semibold">
-                            Order #{order.id}
+                            Order #{orderId}
                           </p>
                           <p className="text-xs text-slate-500">
                             {formattedDate} · {formattedTime}

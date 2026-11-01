@@ -444,14 +444,18 @@ export default function App() {
 
         try {
           await axios.post("/api/orders", {
-            user_id: user.id || user._id,
             items: cart,
             total: Number(finalTotal),
             payment_method: "Razorpay",
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
+          }, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
           });
 
+          writeJSON(getCartStorageKey(user), []);
           setCart([]);
           localStorage.removeItem("cart");
           showToastMessage("✅ Order placed successfully with Razorpay!");

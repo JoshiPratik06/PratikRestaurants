@@ -1,15 +1,29 @@
 import express from "express";
 import Order from "../models/Order.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    console.log("Incoming Order Data:");
-    console.log(req.body);
+    const orders = await Order.find({ user_id: req.authUser.id })
+      .sort({ createdAt: -1 });
 
+    res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error("ORDER FETCH ERROR:", error);
+    res.status(500).json({
+      message: "Failed to fetch orders",
+    });
+  }
+});
+
+router.post("/", authMiddleware, async (req, res) => {
+  try {
     const {
-      user_id,
       items,
       total,
       payment_method,
@@ -19,9 +33,10 @@ router.post("/", async (req, res) => {
 
     // Validation
     if (
-      !user_id ||
-      !items ||
-      !total ||
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      typeof total !== "number" ||
+      total <= 0 ||
       !payment_method
     ) {
       return res.status(400).json({
@@ -31,7 +46,7 @@ router.post("/", async (req, res) => {
 
     // Create order
     const newOrder = new Order({
-      user_id,
+      user_id: req.authUser.id,
       items,
       total,
       payment_method,
@@ -49,12 +64,10 @@ router.post("/", async (req, res) => {
     });
 
   } catch (error) {
-
-    console.log("ORDER ERROR:");
-    console.log(error);
+    console.error("ORDER ERROR:", error);
 
     res.status(500).json({
-      message: error.message,
+      message: "Failed to place order",
     });
   }
 });
