@@ -87,6 +87,7 @@ function removeOrderedItems(cart, orderedItems) {
 
 export default function App() {
   const [toast, setToast] = useState("");
+  const [showDemoWarning, setShowDemoWarning] = useState(true);
   const [showAbout, setShowAbout] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
@@ -272,6 +273,7 @@ export default function App() {
       isCartOpen ||
       showPayment ||
       orderReady ||
+      showDemoWarning ||
       showLogin ||
       showRegister ||
       showAbout ||
@@ -291,6 +293,7 @@ export default function App() {
     isCartOpen,
     showPayment,
     orderReady,
+    showDemoWarning,
     showLogin,
     showRegister,
     showAbout,
@@ -302,6 +305,8 @@ export default function App() {
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key !== "Escape") return;
+
+      if (showDemoWarning) return;
 
       if (showPayment) {
         setShowPayment(false);
@@ -348,6 +353,7 @@ export default function App() {
   }, [
     isCartOpen,
     showPayment,
+    showDemoWarning,
     showProfile,
     showOrders,
     showAbout,
@@ -670,6 +676,46 @@ export default function App() {
 
   return (
     <>
+      {showDemoWarning && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#17251d]/80 px-4 py-6 backdrop-blur-sm"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="demo-warning-title"
+          aria-describedby="demo-warning-description"
+        >
+          <div className="w-full max-w-lg rounded-3xl border border-[#e3e1d6] bg-white p-7 text-[#17251d] shadow-2xl sm:p-9">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fff1d8] text-2xl text-[#9b4a12]" aria-hidden="true">
+              !
+            </div>
+            <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.2em] text-[#9b4a12]">
+              Demo website
+            </p>
+            <h1 id="demo-warning-title" className="mt-2 font-display text-3xl font-extrabold">
+              Please read before continuing
+            </h1>
+            <p id="demo-warning-description" className="mt-4 text-sm leading-6 text-[#4f5c50]">
+              This website is for demonstration only. Do not register with your real identity or enter real personal information. Do not make any payment through Razorpay; payments may be real and charged to you.
+            </p>
+            <p className="mt-4 text-sm text-[#4f5c50]">
+              Questions? Contact{" "}
+              <a
+                href="mailto:pratikjoshi0068@gmail.com"
+                className="font-bold text-[#17251d] underline underline-offset-2"
+              >
+                pratikjoshi0068@gmail.com
+              </a>
+            </p>
+            <button
+              onClick={() => setShowDemoWarning(false)}
+              className="mt-7 w-full rounded-md bg-[#17251d] py-3 font-bold text-white hover:bg-[#22372b]"
+            >
+              I understand — continue to demo
+            </button>
+          </div>
+        </div>
+      )}
+
       {showAbout && <About close={() => setShowAbout(false)} />}
       {showContact && <Contact close={() => setShowContact(false)} />}
       {showOrders && user && (
@@ -739,6 +785,16 @@ export default function App() {
       )}
 
       <div className="min-h-screen flex flex-col bg-[#f6f5ef]">
+        <div
+          role="note"
+          className="px-4 py-2 text-center text-xs font-semibold leading-5 text-[#6b3410] sm:text-sm"
+          style={{ backgroundColor: "#fff1d8" }}
+        >
+          Demo only: don’t use real personal details or make Razorpay payments.{" "}
+          <a href="mailto:pratikjoshi0068@gmail.com" className="font-bold underline underline-offset-2">
+            pratikjoshi0068@gmail.com
+          </a>
+        </div>
         <Navbar
           cartCount={totalItems}
           openCart={() => setIsCartOpen(true)}
