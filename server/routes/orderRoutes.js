@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const orders = await Order.find({ user_id: req.authUser.id })
+    const orders = await Order.find({ user_id: req.user.id })
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -46,7 +46,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     // Create order
     const newOrder = new Order({
-      user_id: req.authUser.id,
+      user_id: req.user.id,
       items,
       total,
       payment_method,

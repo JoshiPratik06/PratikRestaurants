@@ -25,6 +25,6 @@ export default function authMiddleware(req, res, next) {
     return res.status(401).json({ message: "Invalid authentication token" });
   }
 
-  req.authUser = decoded;
+  req.user = decoded;
   return next();
 }
