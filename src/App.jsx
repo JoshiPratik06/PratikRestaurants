@@ -79,6 +79,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [orderReady, setOrderReady] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponMessage, setCouponMessage] = useState("");
@@ -144,6 +145,7 @@ export default function App() {
     const hasModalOpen =
       isCartOpen ||
       showPayment ||
+      orderReady ||
       showLogin ||
       showRegister ||
       showAbout ||
@@ -162,6 +164,7 @@ export default function App() {
   }, [
     isCartOpen,
     showPayment,
+    orderReady,
     showLogin,
     showRegister,
     showAbout,
@@ -443,7 +446,7 @@ export default function App() {
         }
 
         try {
-          await axios.post("/api/orders", {
+          const orderResponse = await axios.post("/api/orders", {
             items: cart,
             total: Number(finalTotal),
             payment_method: "Razorpay",
@@ -455,10 +458,17 @@ export default function App() {
             },
           });
 
+          if (!orderResponse.data?.success || !orderResponse.data?.order) {
+            throw new Error(
+              orderResponse.data?.message || "The order could not be confirmed."
+            );
+          }
+
           writeJSON(getCartStorageKey(user), []);
           setCart([]);
           localStorage.removeItem("cart");
-          showToastMessage("✅ Order placed successfully with Razorpay!");
+          setIsCartOpen(false);
+          setOrderReady(true);
         } catch (error) {
           console.error("Razorpay order post error:", error);
           showToastMessage(
@@ -526,6 +536,47 @@ export default function App() {
             setShowLogin(true);
           }}
         />
+      )}
+
+      {orderReady && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#17251d]/75 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="order-ready-title"
+        >
+          <div className="w-full max-w-md animate-order-ready rounded-3xl bg-white p-8 text-center text-[#17251d] shadow-2xl">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#f6f5ef] text-5xl">
+              <span className="animate-order-dish" aria-hidden="true">🍽️</span>
+            </div>
+            <div className="mt-5 flex justify-center gap-1.5" aria-hidden="true">
+              <span className="order-ready-dot" />
+              <span className="order-ready-dot order-ready-dot-delay-1" />
+              <span className="order-ready-dot order-ready-dot-delay-2" />
+            </div>
+            <h2 id="order-ready-title" className="mt-4 font-display text-3xl font-extrabold">
+              Your order is getting ready!
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#6b7468]">
+              Payment confirmed and your order is saved. You can check its details in My orders.
+            </p>
+            <button
+              onClick={() => {
+                setOrderReady(false);
+                setShowOrders(true);
+              }}
+              className="mt-6 w-full rounded-md bg-[#17251d] py-3 font-bold text-white hover:bg-[#22372b]"
+            >
+              View my orders
+            </button>
+            <button
+              onClick={() => setOrderReady(false)}
+              className="mt-3 w-full rounded-md border border-[#e3e1d6] py-3 font-semibold text-[#6b7468] hover:bg-[#f6f5ef]"
+            >
+              Continue browsing
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="min-h-screen flex flex-col bg-[#f6f5ef]">

@@ -36,6 +36,32 @@ body {
 }
 .animate-fadeUp { animation: toastIn 0.25s ease-out; }
 
+@keyframes orderReadyPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-order-ready { animation: orderReadyPop 0.35s ease-out both; }
+
+@keyframes orderDish {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50% { transform: translateY(-7px) rotate(8deg); }
+}
+.animate-order-dish { animation: orderDish 1.2s ease-in-out infinite; }
+
+@keyframes orderReadyDot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+.order-ready-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--saffron);
+  animation: orderReadyDot 1s ease-in-out infinite;
+}
+.order-ready-dot-delay-1 { animation-delay: 0.15s; }
+.order-ready-dot-delay-2 { animation-delay: 0.3s; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
