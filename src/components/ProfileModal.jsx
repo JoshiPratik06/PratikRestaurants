@@ -1,36 +1,46 @@
-function ProfileModal({ user, close, openOrders, onLogout, onDeleteAccount }) {
+import { UserIcon } from "./Icons";
+
+export default function ProfileModal({ user, close, openOrders, onLogout, onDeleteAccount }) {
   return (
-    <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50">
-      <div className="bg-slate-950 text-white p-6 rounded-[2rem] w-full max-w-sm border border-slate-800 shadow-2xl shadow-black/40">
-        <h2 className="text-2xl font-bold mb-4">👤 Profile</h2>
-        <p className="text-slate-300"><b>Name:</b> {user.name}</p>
-        <p className="text-slate-300 mb-4"><b>Email:</b> {user.email}</p>
-        {user.role !== "admin" && (
-          <button
-            onClick={openOrders}
-            className="w-full mt-2 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl font-semibold"
-          >
-            📦 My Orders
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      onClick={close}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Profile"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl bg-white p-6 text-[#17251d] shadow-2xl"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#17251d] text-[#f2a93b]">
+            <UserIcon width={24} height={24} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display truncate text-xl font-bold">{user.name}</h2>
+            <p className="truncate text-sm text-[#6b7468]">{user.email}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-2">
+          {user.role !== "admin" && (
+            <button onClick={openOrders} className="w-full rounded-md bg-[#17251d] py-3 font-bold text-white hover:bg-[#22372b]">
+              My orders
+            </button>
+          )}
+          <button onClick={onLogout} className="w-full rounded-md border border-[#17251d] py-3 font-bold hover:bg-[#f6f5ef]">
+            Log out
           </button>
-        )}
-        <button
-          onClick={onDeleteAccount}
-          className="w-full mt-3 bg-rose-500 text-white py-3 rounded-xl font-semibold hover:bg-rose-400 transition"
-        >
-          🗑️ Delete Account
-        </button>
-        <button
-          onClick={onLogout}
-          className="w-full mt-3 bg-red-500 text-white py-3 rounded-xl font-semibold"
-        >
-          Logout
-        </button>
-        <button onClick={close} className="mt-4 w-full text-slate-400 hover:text-white">
+          <button onClick={onDeleteAccount} className="w-full rounded-md py-3 text-sm font-semibold text-[#c23b22] hover:bg-[#c23b22]/10">
+            Delete account
+          </button>
+        </div>
+
+        <button onClick={close} className="mt-3 w-full text-sm text-[#6b7468] hover:text-[#17251d]">
           Close
         </button>
       </div>
     </div>
   );
 }
-
-export default ProfileModal;

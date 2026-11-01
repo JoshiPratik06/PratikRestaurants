@@ -1,85 +1,55 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import heroImg from "../assets/tandoorichicken.jpg";
 
-function Hero() {
+export default function Hero() {
   const navigate = useNavigate();
 
+  const goToMenu = () => {
+    navigate("/menu");
+    const scrollWhenReady = (attempt = 0) => {
+      const menuSection = document.getElementById("menu-section");
+      if (menuSection) {
+        menuSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (attempt < 12) setTimeout(() => scrollWhenReady(attempt + 1), 80);
+    };
+    setTimeout(() => scrollWhenReady(), 80);
+  };
+
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center text-center overflow-hidden">
-
-      {/* Background Image */}
-      <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1504674900247-0877df9cc836"
-          alt="Delicious food spread"
-          className="w-full h-full object-cover"
-          loading="eager"
-        />
-        {/* ✅ Improved: gradient overlay instead of flat black */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/60 to-black/90" />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 text-white px-6 max-w-3xl mx-auto">
-
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 backdrop-blur-sm text-orange-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide uppercase">
-          🔥 Authentic Indian Cuisine
-        </div>
-
-        <h1 className="text-5xl md:text-7xl font-extrabold mb-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent leading-tight">
-          Tandoori Tales
-        </h1>
-
-        <p className="text-lg md:text-xl text-gray-200 mb-4 font-light">
-          Where Every Bite Tells a Story 🍽️
-        </p>
-
-        <p className="text-sm md:text-base text-gray-400 mb-10 max-w-lg mx-auto">
-          Fresh ingredients, bold flavors, and the warmth of a home kitchen — delivered to your door.
-        </p>
-
-        {/* ✅ Stats Bar */}
-        <div className="flex justify-center gap-10 mb-10 flex-wrap">
-          {[
-            { value: "50+", label: "Dishes" },
-            { value: "4.8★", label: "Rating" },
-            { value: "30 min", label: "Delivery" },
-            { value: "100%", label: "Fresh" },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-2xl md:text-3xl font-extrabold text-orange-400">{stat.value}</p>
-              <p className="text-xs text-gray-400 uppercase tracking-widest mt-0.5">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* ✅ Dual CTA Buttons */}
-        <div className="flex justify-center gap-4 flex-wrap">
-          <button
-            onClick={() => navigate("/menu")}
-            className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3.5 rounded-full font-bold shadow-lg shadow-orange-500/40 hover:opacity-90 hover:scale-105 transition-all duration-300"
-          >
-            🍽️ Order Now
-          </button>
-          <button
-            onClick={() => navigate("/menu")}
-            className="border border-white/60 text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-sm"
-          >
-            🔍 View Dishes
-          </button>
-        </div>
-
-        {/* Scroll hint */}
-        <div className="mt-16 flex justify-center">
-          <div className="flex flex-col items-center gap-1 text-white/30 text-xs animate-bounce">
-            <span>↓</span>
-            <span>scroll</span>
+    <section className="bg-[#17251d] text-white">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 md:py-24">
+        <div>
+          <h1 className="font-display text-5xl font-extrabold leading-[1.05] sm:text-6xl">
+            Fresh from the tandoor, at your door in 30 minutes.
+          </h1>
+          <p className="mt-5 max-w-md text-lg text-white/70">
+            Curries, kebabs and breads cooked to order. Pick your dishes, pay online, and we deliver them hot.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <button
+              onClick={goToMenu}
+              className="rounded-md bg-[#f2a93b] px-7 py-3.5 font-bold text-[#17251d] transition-transform hover:scale-[1.03] active:scale-95"
+            >
+              Order now
+            </button>
+            <span className="text-sm text-white/60">Rated 4.8 by our regulars</span>
           </div>
         </div>
 
+        <div className="relative">
+          <img
+            src={heroImg}
+            alt="Tandoori chicken fresh from the oven"
+            className="aspect-[4/3] w-full rounded-2xl object-cover"
+          />
+          <div className="absolute -bottom-4 left-4 rounded-lg bg-white px-4 py-3 text-[#17251d] shadow-lg">
+            <p className="font-display text-lg font-bold leading-tight">Tandoori Chicken</p>
+            <p className="text-sm text-[#6b7468]">Our most ordered starter</p>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
-
-export default Hero;

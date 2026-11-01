@@ -1,157 +1,189 @@
-function CartDrawer({
-  cart, increaseQty, decreaseQty, removeItem, totalAmount,
-  isOpen, closeCart, openPayment, couponCode, setCouponCode,
-  couponApplied, couponMessage, handleApplyCoupon, handleRemoveCoupon,
-  couponDiscount, deliveryFee, finalTotal,
+import { useNavigate } from "react-router-dom";
+import { CloseIcon, MinusIcon, PlusIcon, TrashIcon } from "./Icons";
+import { COUPON_CODE, COUPON_DISCOUNT, COUPON_MINIMUM } from "../constants";
+
+const inr = (n) => n.toLocaleString("en-IN");
+const inr2 = (n) =>
+  n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+export default function CartDrawer({
+  cart,
+  increaseQty,
+  decreaseQty,
+  removeItem,
+  totalAmount,
+  isOpen,
+  closeCart,
+  openPayment,
+  couponCode,
+  setCouponCode,
+  couponApplied,
+  setCouponApplied,
+  couponMessage,
+  handleApplyCoupon,
+  handleRemoveCoupon,
+  couponDiscount,
+  deliveryFee,
+  finalTotal,
 }) {
-  // ✅ FIX: Use discounted subtotal for GST display in drawer
-  const gstAmount = (totalAmount - couponDiscount) * 0.05;
+  const navigate = useNavigate();
+  const gstAmount = Number(((totalAmount - couponDiscount) * 0.05).toFixed(2));
 
   return (
-    <div
-      className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl ring-1 ring-slate-900/5 z-50 transform transition-all duration-500 flex flex-col ${
-        isOpen ? "translate-x-0" : "translate-x-full"
+    <aside
+      aria-hidden={!isOpen}
+      aria-label="Your cart"
+      className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-[#f6f5ef] shadow-2xl transition-[transform,visibility] duration-300 ${
+        isOpen ? "translate-x-0 visible" : "translate-x-full invisible"
       }`}
     >
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 px-6 py-8 text-white relative flex-shrink-0">
+      <div className="flex items-center justify-between border-b border-[#e3e1d6] bg-white px-5 py-4">
+        <h2 className="font-display text-2xl font-extrabold">Your cart</h2>
         <button
           onClick={closeCart}
-          className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl hover:bg-white/20 rounded-full p-2 transition"
           aria-label="Close cart"
+          className="rounded-full p-2 text-[#6b7468] hover:bg-[#f6f5ef] hover:text-[#17251d]"
         >
-          ✕
+          <CloseIcon />
         </button>
-        <p className="text-white/90 text-sm font-semibold mb-1">Your Order</p>
-        <h2 className="text-3xl font-bold">Shopping Cart</h2>
       </div>
 
-      {/* Items */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto p-5">
         {cart.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50/50 p-6 text-center text-orange-700">
-            <div className="text-3xl mb-2">🛒</div>
-            <p className="font-semibold">Your cart is empty</p>
-            <p className="text-sm text-orange-600 mt-1">Start adding delicious items!</p>
+          <div className="mt-10 text-center">
+            <p className="font-display text-xl font-bold">Your cart is empty</p>
+            <p className="mt-1 text-sm text-[#6b7468]">Add a few dishes from the menu to get started.</p>
+            <button
+              onClick={() => {
+                closeCart();
+                navigate("/menu");
+              }}
+              className="mt-5 rounded-md bg-[#17251d] px-6 py-3 font-bold text-white hover:bg-[#22372b]"
+            >
+              Browse the menu
+            </button>
           </div>
         ) : (
           cart.map((item) => (
-            <div key={item.id} className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 hover:border-orange-300 transition">
-              <div className="flex justify-between items-start gap-2 mb-3">
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 line-clamp-1">{item.name}</h4>
-                  <p className="text-sm text-slate-500">₹{item.price}</p>
-                </div>
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-2 py-1 rounded-lg font-semibold transition"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1">
+            <div key={item.id} className="flex gap-3 rounded-xl border border-[#e3e1d6] bg-white p-3">
+              <img src={item.image} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="truncate font-semibold">{item.name}</h3>
                   <button
-                    onClick={() => decreaseQty(item.id)}
-                    className="h-7 w-7 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-orange-50 hover:text-orange-600 font-bold transition text-sm"
-                  >−</button>
-                  <span className="px-2 font-semibold text-slate-900 text-sm min-w-[1.5rem] text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => increaseQty(item.id)}
-                    className="h-7 w-7 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-orange-50 hover:text-orange-600 font-bold transition text-sm"
-                  >+</button>
+                    onClick={() => removeItem(item.id)}
+                    aria-label={`Remove ${item.name}`}
+                    className="text-[#6b7468] hover:text-[#c23b22]"
+                  >
+                    <TrashIcon width={16} height={16} />
+                  </button>
                 </div>
-                <p className="font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent text-sm">
-                  ₹{item.price * item.quantity}
-                </p>
+                <div className="mt-auto flex items-center justify-between pt-2">
+                  <div className="flex items-center rounded-md border border-[#e3e1d6]">
+                    <button
+                      onClick={() => decreaseQty(item.id)}
+                      aria-label="Decrease quantity"
+                      className="flex h-8 w-8 items-center justify-center hover:bg-[#f6f5ef]"
+                    >
+                      <MinusIcon width={14} height={14} />
+                    </button>
+                    <span className="min-w-[1.75rem] text-center text-sm font-bold">{item.quantity}</span>
+                    <button
+                      onClick={() => increaseQty(item.id)}
+                      aria-label="Increase quantity"
+                      className="flex h-8 w-8 items-center justify-center hover:bg-[#f6f5ef]"
+                    >
+                      <PlusIcon width={14} height={14} />
+                    </button>
+                  </div>
+                  <p className="font-bold">₹{inr(item.price * item.quantity)}</p>
+                </div>
               </div>
             </div>
           ))
         )}
 
         {cart.length > 0 && (
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-            <div className="text-sm font-semibold text-slate-700">Apply Coupon</div>
-            <div className="flex gap-2">
+          <div className="rounded-xl border border-dashed border-[#c9c6b6] bg-white p-4">
+            <label htmlFor="coupon" className="text-sm font-semibold">Coupon code</label>
+            <div className="mt-2 flex gap-2">
               <input
+                id="coupon"
                 value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Enter coupon code"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:border-orange-400"
+                onChange={(e) => {
+                  setCouponCode(e.target.value);
+                  if (couponApplied) setCouponApplied(false);
+                }}
+                placeholder="Enter code"
+                className="w-full rounded-md border border-[#e3e1d6] px-3 py-2.5 text-sm focus:border-[#17251d] focus:outline-none"
               />
               <button
                 onClick={couponApplied ? handleRemoveCoupon : handleApplyCoupon}
-                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                  couponApplied ? "bg-red-500 text-white hover:bg-red-600" : "bg-orange-500 text-white hover:bg-orange-600"
+                className={`shrink-0 rounded-md px-4 py-2.5 text-sm font-bold ${
+                  couponApplied
+                    ? "border border-[#c23b22] text-[#c23b22] hover:bg-[#c23b22]/10"
+                    : "bg-[#17251d] text-white hover:bg-[#22372b]"
                 }`}
               >
                 {couponApplied ? "Remove" : "Apply"}
               </button>
             </div>
+
             {couponMessage && (
-              <p className={`text-sm ${couponApplied ? "text-green-600" : "text-red-600"}`}>
+              <p className={`mt-2 text-sm ${couponApplied ? "text-[#1f8a4c]" : "text-[#c23b22]"}`}>
                 {couponMessage}
               </p>
             )}
+
             {!couponApplied && (
-              <div className="rounded-2xl bg-yellow-50 border border-yellow-300 p-3 text-xs text-yellow-800 space-y-1">
-                <p className="font-semibold">🎁 Available Coupon</p>
-                <p>
-                  Code:{" "}
-                  <span
-                    className="font-bold text-orange-600 cursor-pointer hover:underline"
-                    onClick={() => setCouponCode("Tandoori100")}
-                  >
-                    Tandoori100
-                  </span>
-                </p>
-                <p>💸 Get ₹100 OFF</p>
-                <p>📌 Minimum order: ₹295</p>
-              </div>
+              <button
+                onClick={() => setCouponCode(COUPON_CODE)}
+                className="mt-3 w-full rounded-md bg-[#f2a93b]/20 px-3 py-2 text-left text-sm"
+              >
+                <span className="font-bold">{COUPON_CODE}</span>
+                <span className="text-[#6b7468]">
+                  {" "}saves ₹{COUPON_DISCOUNT} on orders above ₹{COUPON_MINIMUM}. Tap to use.
+                </span>
+              </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="border-t-2 border-slate-200 bg-gradient-to-r from-orange-50 to-red-50 px-5 py-5 flex-shrink-0">
-        <div className="space-y-2 mb-4 pb-4 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-slate-700">Subtotal</span>
-            <span className="font-bold text-slate-900">₹{totalAmount.toLocaleString("en-IN")}</span>
-          </div>
-          {couponDiscount > 0 && (
-            <div className="flex items-center justify-between text-green-600">
-              <span className="font-semibold">Coupon Discount</span>
-              <span className="font-bold">-₹{couponDiscount.toLocaleString("en-IN")}</span>
+      {cart.length > 0 && (
+        <div className="border-t border-[#e3e1d6] bg-white px-5 py-4">
+          <dl className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-[#6b7468]">Subtotal</dt>
+              <dd>₹{inr(totalAmount)}</dd>
             </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-slate-700">GST (5%)</span>
-            <span className="font-bold text-orange-600">₹{gstAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-slate-700">Delivery</span>
-            <span className="font-bold text-slate-900">₹{deliveryFee.toLocaleString("en-IN")}</span>
-          </div>
-          <div className="flex items-center justify-between pt-2">
-            <span className="font-bold text-slate-900">Total</span>
-            <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              ₹{finalTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-        </div>
-        {cart.length > 0 && (
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-[#1f8a4c]">
+                <dt>Coupon discount</dt>
+                <dd>−₹{inr(couponDiscount)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt className="text-[#6b7468]">GST (5%)</dt>
+              <dd>₹{gstAmount.toFixed(2)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-[#6b7468]">Delivery</dt>
+              <dd>₹{inr(deliveryFee)}</dd>
+            </div>
+            <div className="flex items-baseline justify-between border-t border-[#e3e1d6] pt-3">
+              <dt className="font-bold">Total</dt>
+              <dd className="font-display text-2xl font-extrabold">₹{inr2(finalTotal)}</dd>
+            </div>
+          </dl>
           <button
             onClick={openPayment}
-            className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 text-white py-3 font-bold shadow-lg shadow-orange-300/50 hover:shadow-orange-400/70 transition duration-200"
+            className="mt-4 w-full rounded-md bg-[#f2a93b] py-3.5 font-bold text-[#17251d] transition-transform hover:brightness-95 active:scale-[0.99]"
           >
-            💳 Checkout
+            Checkout · ₹{inr2(finalTotal)}
           </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </aside>
   );
 }
-
-export default CartDrawer;
