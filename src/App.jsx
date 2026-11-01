@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import foodItems from "./data";
 import Register from "./Register";
@@ -68,6 +68,23 @@ function mergeCartItems(baseCart = [], incomingCart = []) {
   return Array.from(map.values());
 }
 
+function removeOrderedItems(cart, orderedItems) {
+  const quantitiesToRemove = new Map(
+    orderedItems.map((item) => [item.id, item.quantity])
+  );
+
+  return cart
+    .map((item) => {
+      const quantityToRemove = quantitiesToRemove.get(item.id) || 0;
+      quantitiesToRemove.set(
+        item.id,
+        Math.max(0, quantityToRemove - item.quantity)
+      );
+      return { ...item, quantity: item.quantity - quantityToRemove };
+    })
+    .filter((item) => item.quantity > 0);
+}
+
 export default function App() {
   const [toast, setToast] = useState("");
   const [showAbout, setShowAbout] = useState(false);
@@ -80,6 +97,10 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [orderReady, setOrderReady] = useState(false);
+  const [pendingPayments, setPendingPayments] = useState(() => {
+    const stored = safeReadJSON("pendingRazorpayPayments", []);
+    return Array.isArray(stored) ? stored : [];
+  });
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponMessage, setCouponMessage] = useState("");
@@ -91,12 +112,13 @@ export default function App() {
   });
 
   const toastTimerRef = useRef(null);
+  const paymentSyncWarningRef = useRef(false);
   const previousUserIdRef = useRef(user?.id ?? null);
 
   const isLoggedIn = Boolean(user);
   const isAdmin = user?.role === "admin";
 
-  const showToastMessage = (message, duration = 2200) => {
+  const showToastMessage = useCallback((message, duration = 2200) => {
     setToast(message);
 
     if (toastTimerRef.current) {
@@ -106,7 +128,111 @@ export default function App() {
     toastTimerRef.current = setTimeout(() => {
       setToast("");
     }, duration);
-  };
+  }, []);
+
+  const completePaidOrder = useCallback((orderId, orderedItemsOverride) => {
+    const attempts = getStoredArray("pendingRazorpayPayments");
+    const attempt = attempts.find((payment) => payment.orderId === orderId);
+    const orderedItems = orderedItemsOverride || attempt?.items || cart;
+
+    setCart((currentCart) => {
+      const updatedCart = removeOrderedItems(currentCart, orderedItems);
+      writeJSON(getCartStorageKey(user), updatedCart);
+      return updatedCart;
+    });
+    setPendingPayments((currentPayments) =>
+      currentPayments.filter((payment) => payment.orderId !== orderId)
+    );
+    setIsCartOpen(false);
+    setOrderReady(true);
+  }, [cart, user]);
+
+  useEffect(() => {
+    writeJSON("pendingRazorpayPayments", pendingPayments);
+  }, [pendingPayments]);
+
+  useEffect(() => {
+    const userId = user?.id || user?._id;
+    const token = localStorage.getItem("token");
+    const userPayments = pendingPayments.filter(
+      (payment) => payment.userId === userId
+    );
+
+    if (!userId || !token || userPayments.length === 0) return undefined;
+
+    let active = true;
+    let checking = false;
+
+    const checkForPaidPayments = async () => {
+      if (!active || checking) return;
+      checking = true;
+
+      try {
+        const results = await Promise.allSettled(
+          userPayments.map(async (payment) => {
+            const response = await axios.get(
+              `/api/orders/payment/${encodeURIComponent(payment.orderId)}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            return response.data?.payment_status === "paid" ? payment.orderId : null;
+          })
+        );
+
+        if (!active) return;
+        const failedCheck = results.some((result) => result.status === "rejected");
+        if (failedCheck && !paymentSyncWarningRef.current) {
+          paymentSyncWarningRef.current = true;
+          console.warn(
+            "Payment confirmation could not be checked:",
+            results.find((result) => result.status === "rejected")?.reason
+          );
+          showToastMessage(
+            "Payment confirmation is still syncing. Your cart is safe; check My orders shortly.",
+            5000
+          );
+        }
+
+        const paidOrderIds = results
+          .filter((result) => result.status === "fulfilled")
+          .map((result) => result.value)
+          .filter(Boolean);
+        if (paidOrderIds.length > 0) {
+          paymentSyncWarningRef.current = false;
+          paidOrderIds.forEach((orderId) => completePaidOrder(orderId));
+        }
+      } catch (error) {
+        if (active && !paymentSyncWarningRef.current) {
+          paymentSyncWarningRef.current = true;
+          console.warn("Payment confirmation is still syncing:", error);
+          showToastMessage(
+            "Payment confirmation is still syncing. Your cart is safe; check My orders shortly.",
+            5000
+          );
+        }
+      } finally {
+        checking = false;
+      }
+    };
+
+    checkForPaidPayments();
+    const intervalId = setInterval(checkForPaidPayments, 5000);
+    const checkWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        checkForPaidPayments();
+      }
+    };
+    document.addEventListener("visibilitychange", checkWhenVisible);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", checkWhenVisible);
+    };
+  }, [completePaidOrder, pendingPayments, showToastMessage, user]);
 
   useEffect(() => {
     return () => {
@@ -413,24 +539,58 @@ export default function App() {
       return;
     }
 
-    const orderResponse = await axios.post(
-      "/api/razorpay/order",
-      {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showToastMessage("Please log in again to continue checkout.");
+      return;
+    }
+
+    let orderResponse;
+    try {
+      orderResponse = await axios.post("/api/razorpay/order", {
         amount: Math.round(finalTotal * 100),
+        total: Number(finalTotal),
+        items: cart,
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
         notes: {
           user_id: user.id || user._id,
           payment_type: "Razorpay",
         },
-      }
-    );
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.error("Razorpay order initialization error:", error);
+      showToastMessage(
+        error.response?.data?.message ||
+          "Unable to initialize payment. Please try again."
+      );
+      return;
+    }
 
     const razorpayOrder = orderResponse.data.order;
     if (!razorpayOrder || !razorpayOrder.id) {
       showToastMessage("Unable to initialize Razorpay payment. Please try again.");
       return;
     }
+
+    const paymentAttempt = {
+      orderId: razorpayOrder.id,
+      userId: user.id || user._id,
+      items: cart.map((item) => ({ ...item })),
+    };
+    const storedPayments = getStoredArray("pendingRazorpayPayments");
+    const updatedPayments = [
+      ...storedPayments.filter(
+        (payment) => payment.orderId !== paymentAttempt.orderId
+      ),
+      paymentAttempt,
+    ];
+    writeJSON("pendingRazorpayPayments", updatedPayments);
+    setPendingPayments(updatedPayments);
 
     const razorpayOptions = {
       key: orderResponse.data.key_id || "rzp_test_YourKeyHere",
@@ -447,11 +607,9 @@ export default function App() {
 
         try {
           const orderResponse = await axios.post("/api/orders", {
-            items: cart,
-            total: Number(finalTotal),
-            payment_method: "Razorpay",
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
           }, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -464,11 +622,7 @@ export default function App() {
             );
           }
 
-          writeJSON(getCartStorageKey(user), []);
-          setCart([]);
-          localStorage.removeItem("cart");
-          setIsCartOpen(false);
-          setOrderReady(true);
+          completePaidOrder(razorpayOrder.id, paymentAttempt.items);
         } catch (error) {
           console.error("Razorpay order post error:", error);
           showToastMessage(
@@ -489,8 +643,13 @@ export default function App() {
       },
     };
 
-    const razorpay = new window.Razorpay(razorpayOptions);
-    razorpay.open();
+    try {
+      const razorpay = new window.Razorpay(razorpayOptions);
+      razorpay.open();
+    } catch (error) {
+      console.error("Unable to open Razorpay checkout:", error);
+      showToastMessage("Unable to open payment checkout. Please try again.");
+    }
   };
 
   const handleStartCheckout = () => {

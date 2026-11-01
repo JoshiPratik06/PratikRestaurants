@@ -46,9 +46,13 @@ const orderSchema = new mongoose.Schema(
       type: String,
     },
 
+    razorpay_amount: {
+      type: Number,
+    },
+
     payment_status: {
       type: String,
-      default: "processed",
+      default: "pending",
     },
   },
   {
